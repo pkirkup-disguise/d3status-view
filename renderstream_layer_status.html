@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RenderStream Layer Status</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>RenderStream Layer Status</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Machine Name</th>
+                <th>Status</th>
+                <th>Health Message</th>
+                <th>Health Details</th>
+                <th>Stream Info</th>
+                <th>Actions</th>
+                <th>Layer Configuration</th>
+            </tr>
+        </thead>
+        <tbody id="layerStatusTable">
+        </tbody>
+    </table>
+    <script src="renderstream_layer_status.js"></script>
+	<script>
+  function sendHeightToParent() {
+    window.parent.postMessage(
+      {
+        frameHeight: document.body.scrollHeight,
+        origin: window.location.href
+      },
+      "*"
+    );
+  }
+
+  setInterval(sendHeightToParent, 1000);
+</script>
+
+</body>
+</html>
