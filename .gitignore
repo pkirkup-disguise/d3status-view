@@ -1,3 +1,10 @@
+# Backup files #
+###################
+.bak
+.js.bak
+.css.bak
+.md.bak
+
 # Compiled source #
 ###################
 *.com
