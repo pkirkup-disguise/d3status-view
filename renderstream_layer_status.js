@@ -106,25 +106,28 @@ updateLayerStatus();
 
 async function updateLayerStatus() {
   const layersData = await fetchData(`http://${config.hostname}:${config.port}/api/session/renderstream/layers`);
-if (layersData && layersData.result) {
+  if (layersData && layersData.result) {
     let tableContent = '';
     for (const layer of layersData.result) {
       const layerStatusData = await fetchData(`http://${config.hostname}:${config.port}/api/session/renderstream/layerstatus?uid=${layer.uid}`);
       if (layerStatusData && layerStatusData.result) {
-        const instance = layerStatusData.result.workload.instances[0];
+        const instance = layerStatusData.result.workload.instances.length > 0 ? layerStatusData.result.workload.instances[0] : null;
         const layerConfigDiv = createLayerConfigDiv(layer.uid);
+
         // Check if the layer configuration div is already visible and preserve its content
         const existingLayerConfigDiv = document.getElementById(`layerConfig-${layer.uid}`);
         let existingLayerConfigDivContent = '';
         if (existingLayerConfigDiv && existingLayerConfigDiv.style.display === 'block') {
           existingLayerConfigDivContent = existingLayerConfigDiv.innerHTML;
         }
-        tableContent += `<tr>
+
+        const rowClass = instance ? '' : 'offline-machine';
+        tableContent += `<tr class="${rowClass}">
           <td>${layer.name}</td>
-          <td>${instance.machineName}</td>
-          <td>${instance.state}</td>
-          <td>${instance.healthMessage}</td>
-          <td>${instance.healthDetails}</td>
+          <td>${instance ? instance.machineName : ''}</td>
+          <td>${instance ? instance.state : 'NOT STARTED'}</td>
+          <td>${instance ? instance.healthMessage : ''}</td>
+          <td>${instance ? instance.healthDetails : ''}</td>
           <td>${renderStreamInfo(layerStatusData.result.streams)}</td>
           <td>
             <span class="action-icons" onclick="performLayerAction('${layer.uid}', 'startlayers')">▶️</span>
@@ -137,6 +140,7 @@ if (layersData && layersData.result) {
             ${layerConfigDiv.outerHTML}
           </td>
         </tr>`;
+
         // If the layer configuration div was visible, preserve its content and display it again
         if (existingLayerConfigDiv && existingLayerConfigDiv.style.display === 'block') {
           existingLayerConfigDiv.innerHTML = existingLayerConfigDivContent;
@@ -147,6 +151,7 @@ if (layersData && layersData.result) {
     }
     layerStatusTable.innerHTML = tableContent;
   }
-}   
+}
+  
 setInterval(updateLayerStatus, 1000);
 
