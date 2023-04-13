@@ -35,12 +35,7 @@ async function updateMachineStatus() {
     const machineNotificationData = await fetchData('notifications');
     const sessionStatusData = await fetchSessionStatus();
 
-
-    if (machineHealthData && machineHealthData.status.code === 1000) {
-        machineStatusTable.innerHTML = `<tr>
-            <td colspan="6" class="solo-mode-warning">⚠️ ${machineHealthData.status.message}</td>
-        </tr>`;
-    } else if (
+    if (
         machineHealthData &&
         machineHealthData.result &&
         machineNotificationData &&
@@ -48,17 +43,23 @@ async function updateMachineStatus() {
         sessionStatusData &&
         sessionStatusData.result
     ) {
+        if (machineHealthData.status.code === 1000) {
+            const existingWarningMessage = document.querySelector('.warning-message');
+            if (!existingWarningMessage) {
+                const warningMessage = document.createElement('div');
+                warningMessage.className = 'warning-message';
+                warningMessage.textContent = `⚠️ ${machineHealthData.status.message}`;
+                document.body.insertBefore(warningMessage, machineStatusTable.parentElement);
+            }
+        }
+
         const directorUid = sessionStatusData.result.director?.uid || null;
         const actorUids = sessionStatusData.result.actors ? sessionStatusData.result.actors.map(actor => actor.uid) : [];
         const understudyUids = sessionStatusData.result.understudies ? sessionStatusData.result.understudies.map(understudy => understudy.uid) : [];
 
         let tableContent = '';
         for (const machineHealth of machineHealthData.result) {
-            if (!machineHealth || !machineHealth.machine) {
-                continue;
-            }
             const machineUid = machineHealth.machine.uid;
-            console.log('machineUid:', machineUid);
             let machineRole = 'Unknown';
             let machineRoleEmoji = '❓';
             if (machineUid === directorUid) {
@@ -101,6 +102,7 @@ async function updateMachineStatus() {
         machineStatusTable.innerHTML = tableContent;
     }
 }
+
 
 
 function showNotificationDetails(machineUid) {
