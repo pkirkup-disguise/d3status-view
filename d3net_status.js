@@ -35,14 +35,30 @@ async function updateMachineStatus() {
     const machineNotificationData = await fetchData('notifications');
     const sessionStatusData = await fetchSessionStatus();
 
-    if (machineHealthData && machineHealthData.result && machineNotificationData && machineNotificationData.result && sessionStatusData && sessionStatusData.result) {
-        const directorUid = sessionStatusData.result.director.uid;
-        const actorUids = sessionStatusData.result.actors.map(actor => actor.uid);
-        const understudyUids = sessionStatusData.result.understudies.map(understudy => understudy.uid);
+
+    if (machineHealthData && machineHealthData.status.code === 1000) {
+        machineStatusTable.innerHTML = `<tr>
+            <td colspan="6" class="solo-mode-warning">⚠️ ${machineHealthData.status.message}</td>
+        </tr>`;
+    } else if (
+        machineHealthData &&
+        machineHealthData.result &&
+        machineNotificationData &&
+        machineNotificationData.result &&
+        sessionStatusData &&
+        sessionStatusData.result
+    ) {
+        const directorUid = sessionStatusData.result.director?.uid || null;
+        const actorUids = sessionStatusData.result.actors ? sessionStatusData.result.actors.map(actor => actor.uid) : [];
+        const understudyUids = sessionStatusData.result.understudies ? sessionStatusData.result.understudies.map(understudy => understudy.uid) : [];
 
         let tableContent = '';
         for (const machineHealth of machineHealthData.result) {
+            if (!machineHealth || !machineHealth.machine) {
+                continue;
+            }
             const machineUid = machineHealth.machine.uid;
+            console.log('machineUid:', machineUid);
             let machineRole = 'Unknown';
             let machineRoleEmoji = '❓';
             if (machineUid === directorUid) {
@@ -86,6 +102,7 @@ async function updateMachineStatus() {
     }
 }
 
+
 function showNotificationDetails(machineUid) {
     const machineNotificationData = JSON.parse(localStorage.getItem('machineNotificationData'));
     if (machineNotificationData) {
@@ -104,6 +121,7 @@ function showNotificationDetails(machineUid) {
 }
 
 async function updateData() {
+
     await updateMachineStatus();
     const machineNotificationData = await fetchData('notifications');
     if (machineNotificationData) {
@@ -111,4 +129,6 @@ async function updateData() {
     }
 }
 
-setInterval(updateData, 1000);
+setInterval(() => {
+    updateData();
+}, 1000);
