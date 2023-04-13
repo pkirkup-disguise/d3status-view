@@ -1,4 +1,6 @@
-async function fetchData(url, method = 'GET', body = null) {
+const config = JSON.parse(localStorage.getItem('config')) || { hostname: 'localhost', port: '80' };
+
+async function fetchData(path, method = 'GET', body = null) {
     try {
         const options = {
             method,
@@ -9,6 +11,7 @@ async function fetchData(url, method = 'GET', body = null) {
         if (body) {
             options.body = JSON.stringify(body);
         }
+        const url = `http://${config.hostname}:${config.port}/api/session/status/${path}`;
         const response = await fetch(url, options);
         if (!response.ok) {
             throw new Error(`HTTP error ${response.status}`);
@@ -24,8 +27,8 @@ const machineStatusTable = document.getElementById('machineStatusTable');
 const notificationDetails = document.getElementById('notificationDetails');
 
 async function updateMachineStatus() {
-    const machineHealthData = await fetchData('http://localhost/api/session/status/health');
-    const machineNotificationData = await fetchData('http://localhost/api/session/status/notifications');
+    const machineHealthData = await fetchData('health');
+    const machineNotificationData = await fetchData('notifications');
 
     if (machineHealthData && machineHealthData.result && machineNotificationData && machineNotificationData.result) {
         let tableContent = '';
@@ -70,11 +73,10 @@ function showNotificationDetails(machineUid) {
 
 async function updateData() {
     await updateMachineStatus();
-    const machineNotificationData = await fetchData('http://localhost/api/session/status/notifications');
+    const machineNotificationData = await fetchData('notifications');
     if (machineNotificationData) {
         localStorage.setItem('machineNotificationData', JSON.stringify(machineNotificationData));
     }
 }
 
 setInterval(updateData, 1000);
- 

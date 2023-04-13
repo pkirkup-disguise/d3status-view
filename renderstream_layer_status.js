@@ -1,4 +1,6 @@
-        const layerStatusTable = document.getElementById('layerStatusTable');
+const config = JSON.parse(localStorage.getItem('config')) || { hostname: 'localhost', port: '80' };
+
+const layerStatusTable = document.getElementById('layerStatusTable');
 
         async function fetchData(url, method = 'GET', body = null) {
             try {
@@ -33,7 +35,7 @@
         }
 
         async function performLayerAction(layerUid, action) {
-const endpoint = `http://localhost/api/session/renderstream/${action}`;
+const endpoint = `http://${config.hostname}:${config.port}/api/session/renderstream/${action}`;
 await fetchData(endpoint, 'POST', getLayerAction(layerUid, action));
 updateLayerStatus();
 }
@@ -72,7 +74,7 @@ updateLayerStatus();
         if (layerConfigDiv.style.display === 'block') {
             layerConfigDiv.style.display = 'none';
         } else {
-            const layerConfigData = await fetchData(`http://localhost/api/session/renderstream/layerconfig?uid=${layerUid}`);
+            const layerConfigData = await fetchData(`http://${config.hostname}:${config.port}/api/session/renderstream/layerconfig?uid=${layerUid}`);
             if (layerConfigData && layerConfigData.result) {
                 const layerConfig = layerConfigData.result;
                 const layerConfigTable = document.createElement('table');
@@ -103,11 +105,11 @@ updateLayerStatus();
     }
 
 async function updateLayerStatus() {
-  const layersData = await fetchData('http://localhost/api/session/renderstream/layers');
-  if (layersData && layersData.result) {
+  const layersData = await fetchData(`http://${config.hostname}:${config.port}/api/session/renderstream/layers`);
+if (layersData && layersData.result) {
     let tableContent = '';
     for (const layer of layersData.result) {
-      const layerStatusData = await fetchData(`http://localhost/api/session/renderstream/layerstatus?uid=${layer.uid}`);
+      const layerStatusData = await fetchData(`http://${config.hostname}:${config.port}/api/session/renderstream/layerstatus?uid=${layer.uid}`);
       if (layerStatusData && layerStatusData.result) {
         const instance = layerStatusData.result.workload.instances[0];
         const layerConfigDiv = createLayerConfigDiv(layer.uid);
@@ -148,34 +150,3 @@ async function updateLayerStatus() {
 }   
 setInterval(updateLayerStatus, 1000);
 
-async function updateSessionStatus() {
-  const sessionStatusData = await fetchData('http://localhost/api/session/status/session');
-  if (sessionStatusData && sessionStatusData.result) {
-    let tableContent = '';
-    for (const machine of sessionStatusData.result.actors) {
-      tableContent += `<tr>
-        <td>Actor 🎭</td>
-        <td>${machine.name}</td>
-        <td>${machine.hostname}</td>
-        <td>${machine.uid}</td>
-      </tr>`;
-    }
-    for (const machine of sessionStatusData.result.understudies) {
-      tableContent += `<tr>
-        <td>Understudy 💤</td>
-        <td>${machine.name}</td>
-        <td>${machine.hostname}</td>
-        <td>${machine.uid}</td>
-      </tr>`;
-    }
-    tableContent += `<tr>
-      <td>Director 🎬</td>
-      <td>${sessionStatusData.result.director.name}</td>
-      <td>${sessionStatusData.result.director.hostname}</td>
-      <td>${sessionStatusData.result.director.uid}</td>
-    </tr>`;
-    sessionStatusTable.innerHTML = tableContent;
-  }
-}
-
-setInterval(updateSessionStatus, 1000);

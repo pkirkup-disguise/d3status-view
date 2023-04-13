@@ -76,3 +76,22 @@
             text-align: center;
             width: 20px;
         }
+		.configPanelHidden {
+  display: none;
+}
+#configIconWrapper {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+.configIcon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f1f1f1;
+  cursor: pointer;
+}

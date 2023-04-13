@@ -9,21 +9,65 @@
 </head>
 <body>
     <h1>Main Page</h1>
+    <div id="configPanel" class="configPanelHidden">
+        <label for="apiEndpoint">API Endpoint:</label>
+        <input type="text" id="apiEndpoint" value=""><br/>
+		<label for="apiPort">API Port:</label><input type="text" id="apiPort" value="">
+        <button id="saveConfigButton">Save Configuration</button>
+    </div>
+    <div id="configIconWrapper">
+  <div id="configIcon" class="configIcon">
+    <span class="icon-cog" role="img" aria-label="Configure API Endpoint">⚙️</span>
+  </div>
+</div>
+
     <iframe src="renderstream_layer_status.html" width="100%" height="600px" frameborder="0"></iframe>
     <iframe src="d3net_status.html" width="100%" height="600px" frameborder="0"></iframe>
-	<script>
-  window.addEventListener("message", (event) => {
-    if (event.data && event.data.frameHeight) {
-      const iframes = document.getElementsByTagName("iframe");
-      for (const iframe of iframes) {
-        if (iframe.src === event.data.origin) {
-          iframe.height = event.data.frameHeight + "px";
-          break;
-        }
-      }
-    }
-  });
-</script>
+    <script>
+        const configPanel = document.getElementById('configPanel');
+        const configIcon = document.getElementById('configIcon');
+        const saveConfigButton = document.getElementById('saveConfigButton');
+        const apiEndpointInput = document.getElementById('apiEndpoint');
+        const apiPortInput = document.getElementById('apiPort');
 
+        function toggleConfigPanel() {
+            if (configPanel.classList.contains('configPanelHidden')) {
+                configPanel.classList.remove('configPanelHidden');
+                apiEndpointInput.value = JSON.parse(localStorage.getItem('config')).hostname;
+				apiPort.value = JSON.parse(localStorage.getItem('config')).port;
+                configIcon.classList.add('configIconActive');
+            } else {
+                configPanel.classList.add('configPanelHidden');
+                configIcon.classList.remove('configIconActive');
+            }
+        }
+
+        configIcon.addEventListener('click', toggleConfigPanel);
+
+        saveConfigButton.addEventListener('click', () => {
+            const newConfig = {
+                hostname: apiEndpointInput.value,
+                port: apiPort.value
+            };
+            localStorage.setItem('config', JSON.stringify(newConfig));
+            toggleConfigPanel();
+        });
+
+        // Hide the API endpoint UI on page load
+        configPanel.classList.add('configPanelHidden');
+    </script>
+    <script>
+        window.addEventListener("message", (event) => {
+            if (event.data && event.data.frameHeight) {
+                const iframes = document.getElementsByTagName("iframe");
+                for (const iframe of iframes) {
+                    if (iframe.src === event.data.origin) {
+                        iframe.height = event.data.frameHeight + "px";
+                        break;
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
