@@ -99,3 +99,46 @@
 .offline-machine {
     opacity: 0.5;
 }
+
+
+a.logo {
+    background-color: transparent;
+    background-image: url('disguise_logo_RGB_Black.svg');
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: 126px;
+	height:36px;
+	display: flex;
+}
+
+.title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: #ffffff;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+
+h2 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+
+
+#configIconWrapper {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  z-index: 9999;
+  transform: translateY(-50%);
+}
+
+
+

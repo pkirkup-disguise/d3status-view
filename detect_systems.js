@@ -39,7 +39,7 @@ async function updateDetectedSystems() {
             tableContent += `<tr>
                 <td>${system.hostname}</td>
                 <td>${system.type}</td>
-                <td>${version}</td>
+                <td>r${version}</td>
                 <td>${system.runningProject}</td>
                 <td>${system.ipAddress}</td>
                 <td>${system.isDesignerRunning ? '✔️' : '❌'}</td>
