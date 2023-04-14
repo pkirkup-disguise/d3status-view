@@ -103,7 +103,7 @@
 
 a.logo {
     background-color: transparent;
-    background-image: url('disguise_logo_RGB_Black.svg');
+    background-image: url('./assets/disguise_logo_RGB_Black.svg');
     background-position: left center;
     background-repeat: no-repeat;
     background-size: contain;
