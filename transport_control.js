@@ -1,199 +1,154 @@
-// Fetch the active transports and tracks when the page loads
-window.addEventListener('load', function() {
-    fetch('http://localhost/api/session/transport/activetransport')
-        .then(response => response.json())
-        .then(data => {
-            const transportSelect = document.getElementById('transportSelect');
-            data.result.forEach(transport => {
-                const option = document.createElement('option');
-                option.value = transport.uid;
-                option.textContent = transport.name;
-                transportSelect.appendChild(option);
-            });
-        });
+const config = JSON.parse(localStorage.getItem('config')) || { hostname: 'localhost', port: '80' };
+function fetchAPI(endpoint, method = 'GET', body = null) {
+    return fetch(`http://${config.hostname}:${config.port}/api/session/transport/${endpoint}`, {
+        method: method,
+        body: body ? JSON.stringify(body) : null,
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json());
+}
 
-    fetch('http://localhost/api/session/transport/tracks')
-        .then(response => response.json())
-        .then(data => {
-            const trackSelect = document.getElementById('trackSelect');
-            data.result.forEach(track => {
-                const option = document.createElement('option');
-                option.value = track.uid;
-                option.textContent = track.name;
-                trackSelect.appendChild(option);
-            });
-            // Trigger 'change' event after populating dropdown
-            trackSelect.dispatchEvent(new Event('change'));
-        });
+const createOption = (parent, value, text, selected = false) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = text;
+    option.selected = selected;
+    parent.appendChild(option);
+};
+
+window.addEventListener('load', () => {
+    fetchAPI('activetransport').then(data => {
+        const transportSelect = document.getElementById('transportSelect');
+        data.result.forEach(({ uid, name }) => createOption(transportSelect, uid, name));
+        fetchTracksAndPopulateDropdown(data.result[0].currentTrack.uid);
+    });
 });
 
-// Event listener for track selection
-document.getElementById('trackSelect').addEventListener('change', function() {
-    const selectedTrackUid = this.value;
-    const selectedTrackName = this.options[this.selectedIndex].text;
-    const transportSelect = document.getElementById('transportSelect');
-    const selectedTransportUid = transportSelect.value;
-    const selectedTransportName = transportSelect.options[transportSelect.selectedIndex].text;
+document.getElementById('trackSelect').addEventListener('change', fetchTrackAnnotations);
 
-    // Change track
-    fetch('http://localhost/api/session/transport/gototrack', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            transports: [
+function fetchTracksAndPopulateDropdown(activeTrackUid) {
+    fetchAPI('tracks').then(data => {
+        const trackSelect = document.getElementById('trackSelect');
+        data.result.forEach(({ uid, name }) => createOption(trackSelect, uid, name, uid === activeTrackUid));
+        fetchTrackAnnotations();
+    });
+}
+
+function createTimelineMarker(parent, className, position, height = 'auto') {
+    const markerDiv = document.createElement('div');
+    markerDiv.className = className;
+    markerDiv.style.left = `${position}%`;
+    markerDiv.style.height = height;
+    parent.appendChild(markerDiv);
+    return markerDiv;
+}
+
+function fetchTrackAnnotations() {
+    const trackUid = document.getElementById('trackSelect').value;
+    fetchAPI('tracks').then(data => {
+        const track = data.result.find(({ uid }) => uid === trackUid);
+        const trackLength = track.length;
+        const annotationsTimeline = document.getElementById('annotationsTimeline');
+        annotationsTimeline.innerHTML = '';
+        const majorMarkerInterval = 15, minorMarkerInterval = 1;
+        Array.from({ length: Math.floor(trackLength / majorMarkerInterval) + 1 }, (_, i) => createTimelineMarker(annotationsTimeline, 'timelineMarker', (i * majorMarkerInterval / trackLength) * 100));
+        Array.from({ length: Math.floor(trackLength / minorMarkerInterval) + 1 }, (_, i) => createTimelineMarker(annotationsTimeline, 'minorTimelineMarker', (i * minorMarkerInterval / trackLength) * 100, '20px'));
+        
+        fetchAPI(`annotations?uid=${trackUid}`).then(data => {
+            const { notes, tags, sections } = data.result.annotations;
+            const selectedTransportUid = document.getElementById('transportSelect').value;
+            const selectedTransportName = document.getElementById('transportSelect').selectedOptions[0].text;
+            
+            sections.forEach((section, index) => {
+    const sectionDiv = createTimelineMarker(annotationsTimeline, 'section', (section.time / trackLength) * 100);
+    sectionDiv.style.width = `${((sections[index + 1]?.time || trackLength) - section.time) / trackLength * 100}%`;
+    sectionDiv.style.backgroundColor = index % 2 === 0 ? 'lightblue' : 'red';
+    sectionDiv.addEventListener('click', () => {
+        const payload = {
+            "transports": [
                 {
-                    transport: {
-                        uid: selectedTransportUid,
-                        name: selectedTransportName
-                    },
-                    track: {
-                        uid: selectedTrackUid,
-                        name: selectedTrackName
-                    },
-                    playmode: 'NotSet'
+                    "uid": selectedTransportUid,
+                    "name": selectedTransportName,
+                    "section": index, // use index instead of section name
+                    "playmode": "NotSet"
                 }
             ]
-        })
+        };
+        fetchAPI('gotosection', 'POST', payload);
     });
-
-    // Fetch track length
-    fetch('http://localhost/api/session/transport/tracks')
-        .then(response => response.json())
-        .then(data => {
-            const track = data.result.find(track => track.uid === selectedTrackUid);
-            const trackLength = track.length; // in seconds
-
-            // Clear the current annotations
-            const annotationsTimeline = document.getElementById('annotationsTimeline');
-            annotationsTimeline.innerHTML = '';
-
-            // Calculate the number of major markers
-            const majorMarkerInterval = 15;
-            const numMajorMarkers = Math.floor(trackLength / majorMarkerInterval);
-
-            // Calculate the number of minor markers
-            const minorMarkerInterval = 1; // Generate minor markers every 1 second
-            const numMinorMarkers = Math.floor(trackLength / minorMarkerInterval);
-
-            // Create major marker divs
-            for (let i = 0; i <= numMajorMarkers; i++) {
-                const markerTime = i * majorMarkerInterval;
-                const markerPosition = (markerTime / trackLength) * 100;
-
-                const markerDiv = document.createElement('div');
-                markerDiv.className = 'timelineMarker';
-                markerDiv.style.left = `${markerPosition}%`;
-                annotationsTimeline.appendChild(markerDiv);
-            }
-
-            // Create minor marker divs
-            for (let i = 0; i <= numMinorMarkers; i++) {
-                const markerTime = i * minorMarkerInterval;
-                const markerPosition = (markerTime / trackLength) * 100;
-
-                const minorMarkerDiv = document.createElement('div');
-                minorMarkerDiv.className = 'minorTimelineMarker';
-                minorMarkerDiv.style.left = `${markerPosition}%`;
-                                minorMarkerDiv.style.height = '20px'; // Adjust the height as needed
-                annotationsTimeline.appendChild(minorMarkerDiv);
-            }
-
-            // Fetch and display annotations
-            fetch(`http://localhost/api/session/transport/annotations?uid=${selectedTrackUid}`)
-                .then(response => response.json())
-                .then(data => {
-                    const { notes, tags, sections } = data.result.annotations;
-
-                    // Create background colors for sections
-                    sections.forEach((section, index) => {
-                        const sectionDiv = document.createElement('div');
-                        sectionDiv.className = 'section';
-                        sectionDiv.style.left = `${(section.time / trackLength) * 100}%`;
-                        sectionDiv.style.width = `${((sections[index + 1]?.time || trackLength) - section.time) / trackLength * 100}%`;
-                        sectionDiv.style.backgroundColor = index % 2 === 0 ? 'lightblue' : 'red';
-                        annotationsTimeline.appendChild(sectionDiv);
-                    });
-
-                    // Create annotations for notes
-notes.forEach((note, index) => {
-    const annotationDiv = document.createElement('div');
-    annotationDiv.className = 'annotation note';
-    annotationDiv.style.left = `${(note.time / trackLength) * 100}%`;
-    annotationDiv.textContent = note.text;
-    annotationDiv.title = note.text;
-    annotationDiv.style.top = `${index * 20}px`; // Adjust the height as needed
-    annotationsTimeline.appendChild(annotationDiv);
+    annotationsTimeline.appendChild(sectionDiv);
 });
 
-// Create annotations for tags
-tags.forEach((tag, index) => {
-    const annotationDiv = document.createElement('div');
-    annotationDiv.className = 'annotation tag';
-    annotationDiv.style.left = `${(tag.time / trackLength) * 100}%`;
-    annotationDiv.textContent = `${tag.type}: ${tag.value}`;
-    annotationDiv.title = `${tag.type}: ${tag.value}`;
-    annotationDiv.style.top = `${(index + notes.length) * 20}px`; // Adjust the height as needed
-    annotationsTimeline.appendChild(annotationDiv);
-});
 
-                });
-        });
-});
 
-// Rest of the code...
+            notes.forEach((note, index) => {
+                const annotationDiv = document.createElement('div');
+                annotationDiv.className = 'annotation note';
+                annotationDiv.style.left = `${(note.time / trackLength) * 100}%`;
+                annotationDiv.textContent = note.text;
+                annotationDiv.title = note.text;
+                annotationDiv.style.top = `${index * 20}px`;
+                annotationsTimeline.appendChild(annotationDiv);
+            });
 
-function postToTransportEndpoint(endpoint, includePlaymode = false) {
-    const selectedTransportUid = document.getElementById('transportSelect').value;
-    let payload = {
+            tags.forEach((tag, index) => {
+                const annotationDiv = document.createElement('div');
+                annotationDiv.className = 'annotation tag';
+                annotationDiv.style.left = `${(tag.time / trackLength) * 100}%`;
+                annotationDiv.textContent = `${tag.type}: ${tag.value}`;
+                annotationDiv.title = `${tag.type}: ${tag.value}`;
+                annotationDiv.style.top = `${(index + notes.length) * 20}px`;
+                annotationDiv.addEventListener('click', () => {
+    const payload = {
         "transports": [
             {
-                "uid": selectedTransportUid,
-                "name": document.getElementById('transportSelect').selectedOptions[0].text
+                "transport": {
+                    "uid": selectedTransportUid,
+                    "name": selectedTransportName
+                },
+                "type": tag.type,
+                "value": tag.value,
+                "allowGlobalJump": true,
+                "playmode": "NotSet"
             }
         ]
     };
+    fetchAPI('gototag', 'POST', payload);
+});
 
-    if (includePlaymode) {
-        const selectedPlaymode = document.getElementById('playmodeSelect').value;
-        payload.transports[0].playmode = selectedPlaymode;
-    }
+                annotationsTimeline.appendChild(annotationDiv);
+            });
+        }).catch(error => console.error('Error fetching annotations:', error));
+    });
+}
 
-    fetch(endpoint, {
+
+
+
+function postToTransportEndpoint(endpoint) {
+    const selectedTransportUid = document.getElementById('transportSelect').value;
+    fetch(`http://${config.hostname}:${config.port}/api/session/transport/${endpoint}`, {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+            transports: [{
+                uid: selectedTransportUid,
+                name: document.getElementById('transportSelect').selectedOptions[0].text,
+                                playmode: document.getElementById('playmodeSelect')?.value
+            }]
+        }),
         headers: {
             'Content-Type': 'application/json'
         }
     });
 }
 
-// Event listeners for the buttons
-document.getElementById('playButton').addEventListener('click', function() {
-    postToTransportEndpoint('http://localhost/api/session/transport/play');
-});
+const addButtonListener = (buttonId, endpoint) => {
+    document.getElementById(buttonId).addEventListener('click', () => postToTransportEndpoint(endpoint));
+};
 
-document.getElementById('pauseButton').addEventListener('click', function() {
-    postToTransportEndpoint('http://localhost/api/session/transport/stop');
-});
-
-document.getElementById('loopButton').addEventListener('click', function() {
-    postToTransportEndpoint('http://localhost/api/session/transport/playloopsection');
-});
-
-document.getElementById('returnButton').addEventListener('click', function() {
-    postToTransportEndpoint('http://localhost/api/session/transport/returntostart');
-});
-
-document.getElementById('playSectionButton').addEventListener('click', function() {
-    postToTransportEndpoint('http://localhost/api/session/transport/playsection', true);
-});
-
-document.getElementById('nextSectionButton').addEventListener('click', function() {
-    postToTransportEndpoint('http://localhost/api/session/transport/gotonextsection', true);
-});
-
-document.getElementById('prevSectionButton').addEventListener('click', function() {
-    postToTransportEndpoint('http://localhost/api/session/transport/gotoprevsection', true);
+['play', 'stop', 'playloopsection', 'returntostart', 'playsection', 'gotonextsection', 'gotoprevsection'].forEach((endpoint, index) => {
+    const buttonId = ['playButton', 'pauseButton', 'loopButton', 'returnButton', 'playSectionButton', 'nextSectionButton', 'prevSectionButton'][index];
+    addButtonListener(buttonId, endpoint);
 });
