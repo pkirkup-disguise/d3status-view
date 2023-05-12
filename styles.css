@@ -141,4 +141,75 @@ h2 {
 }
 
 
+#annotationsTimeline {
+    position: relative;
+    width: 100%;
+    height: 100px;  /* changed */
+    background-color: #ddd;
+    overflow-x: auto;  /* new */
+    white-space: nowrap;  /* new */
+}
+#annotationsTimeline {
+            position: relative;
+            height: 100px;
+            width: 100%;
+            overflow-x: scroll;
+            border: 1px solid black;
+        }
+.annotation {
+    position: absolute;
+    bottom: 0;
+    min-width: 100px;  /* changed */
+    height: 50px;
+    background-color: #333;
+    color: black;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 5px;
+	font-size: 10px;
+    box-sizing: border-box;
+    line-height: 50px;
+    border: 1px solid white;
+}
 
+.annotation.note {
+    background-color: #f00;
+}
+
+.annotation.tag {
+    background-color: #0f0;
+}
+
+.annotation.section {
+    background-color: #00f;
+}
+
+.timelineMarker {  /* new */
+    position: absolute;
+    width: 1px;
+    height: 100%;
+    background-color: #000;
+}
+
+
+        .indicator,
+        .annotation,
+        .section {
+            position: absolute;
+            height: 100%;
+        }
+
+        .annotation,
+        .section {
+            bottom: 0;
+        }
+
+        .indicator {
+            width: 1px;
+            background-color: black;
+        }
+
+        .section {
+            opacity: 0.5;
+        }

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <h1>Transport Control</h1>
+    <div id="controlPanel">
+        <select id="transportSelect">
+            <!-- Transports will be populated here -->
+        </select>
+		<select id="trackSelect">
+            <!-- Tracks will be populated here -->
+        </select>
+        <select id="playmodeSelect">
+            <option value="NotSet">NotSet</option>
+            <option value="Play">Play</option>
+            <option value="PlaySection">PlaySection</option>
+            <option value="Loop">Loop</option>
+            <option value="Stop">Stop</option>
+            <option value="Unknown">Unknown</option>
+        </select>
+        <button id="playButton"><i class="fas fa-play"></i> Play</button>
+        <button id="pauseButton"><i class="fas fa-pause"></i> Pause</button>
+        <button id="loopButton"><i class="fas fa-redo-alt"></i> Loop</button>
+        <button id="returnButton"><i class="fas fa-undo"></i> Return to Start</button>
+        <button id="playSectionButton"><i class="fas fa-forward"></i> Play Section</button>
+        <button id="nextSectionButton"><i class="fas fa-step-forward"></i> Next Section</button>
+        <button id="prevSectionButton"><i class="fas fa-step-backward"></i> Previous Section</button>
+    </div>
+	<div id="annotationsTimeline"></div>
+   
+    <div id="notificationDetails" style="display: none;"></div>
+    <script src="transport_control.js"></script>
+    <script>
+        function sendHeightToParent() {
+            window.parent.postMessage(
+                {
+                    frameHeight: document.body.scrollHeight,
+                    origin: window.location.href
+                },
+                "*"
+            );
+        }
+
+        setInterval(sendHeightToParent, 1000);
+    </script>
+</body>
+</html>
