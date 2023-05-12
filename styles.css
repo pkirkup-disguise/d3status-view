@@ -153,13 +153,13 @@ h2 {
             position: relative;
             height: 100px;
             width: 100%;
-            overflow-x: scroll;
             border: 1px solid black;
+			overflow: hidden; /* Hide the overflowing content */
         }
 .annotation {
     position: absolute;
     bottom: 0;
-    min-width: 100px;  /* changed */
+    min-width: 40px;  /* changed */
     height: 50px;
     background-color: #333;
     color: black;
@@ -169,20 +169,23 @@ h2 {
     padding: 5px;
 	font-size: 10px;
     box-sizing: border-box;
-    line-height: 50px;
+    line-height: 10px;
     border: 1px solid white;
 }
 
 .annotation.note {
-    background-color: #f00;
+    background-color: #555;
+	            height: 25%;
+				color:white;
 }
 
 .annotation.tag {
-    background-color: #0f0;
+    background-color: #ccc;
+	            height: 25%;
 }
 
 .annotation.section {
-    background-color: #00f;
+	            height: 100%;
 }
 
 .timelineMarker {  /* new */
@@ -192,15 +195,36 @@ h2 {
     background-color: #000;
 }
 
+.minorTimelineMarker {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  background-color: #000; /* Adjust the color as needed */
+  height: 100%;
+  bottom: 0;
+}
 
-        .indicator,
-        .annotation,
+
+
         .section {
             position: absolute;
-            height: 100%;
+			            height: 100%;
+  top: 0;
+  height: 100%;
+
         }
+		.section:nth-child(odd) {
+  background: linear-gradient(to right, lightblue, darkblue);
+}
+
+.section:nth-child(even) {
+  background: linear-gradient(to right, red, darkred);
+}
 
         .annotation,
+         {
+            bottom: 20;
+        }
         .section {
             bottom: 0;
         }

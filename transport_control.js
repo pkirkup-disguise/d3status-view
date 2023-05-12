@@ -25,13 +25,6 @@ window.addEventListener('load', function() {
             // Trigger 'change' event after populating dropdown
             trackSelect.dispatchEvent(new Event('change'));
         });
-	const timeline = document.getElementById('annotationsTimeline');
-    for (let i = 15; i < timeline.offsetWidth / 15; i++) {
-        const indicator = document.createElement('div');
-        indicator.className = 'indicator';
-        indicator.style.left = `${(i * 15) / timeline.offsetWidth * 100}%`;
-        timeline.appendChild(indicator);
-    }
 });
 
 // Event listener for track selection
@@ -72,32 +65,46 @@ document.getElementById('trackSelect').addEventListener('change', function() {
             const track = data.result.find(track => track.uid === selectedTrackUid);
             const trackLength = track.length; // in seconds
 
+            // Clear the current annotations
+            const annotationsTimeline = document.getElementById('annotationsTimeline');
+            annotationsTimeline.innerHTML = '';
+
+            // Calculate the number of major markers
+            const majorMarkerInterval = 15;
+            const numMajorMarkers = Math.floor(trackLength / majorMarkerInterval);
+
+            // Calculate the number of minor markers
+            const minorMarkerInterval = 1; // Generate minor markers every 1 second
+            const numMinorMarkers = Math.floor(trackLength / minorMarkerInterval);
+
+            // Create major marker divs
+            for (let i = 0; i <= numMajorMarkers; i++) {
+                const markerTime = i * majorMarkerInterval;
+                const markerPosition = (markerTime / trackLength) * 100;
+
+                const markerDiv = document.createElement('div');
+                markerDiv.className = 'timelineMarker';
+                markerDiv.style.left = `${markerPosition}%`;
+                annotationsTimeline.appendChild(markerDiv);
+            }
+
+            // Create minor marker divs
+            for (let i = 0; i <= numMinorMarkers; i++) {
+                const markerTime = i * minorMarkerInterval;
+                const markerPosition = (markerTime / trackLength) * 100;
+
+                const minorMarkerDiv = document.createElement('div');
+                minorMarkerDiv.className = 'minorTimelineMarker';
+                minorMarkerDiv.style.left = `${markerPosition}%`;
+                                minorMarkerDiv.style.height = '20px'; // Adjust the height as needed
+                annotationsTimeline.appendChild(minorMarkerDiv);
+            }
+
             // Fetch and display annotations
             fetch(`http://localhost/api/session/transport/annotations?uid=${selectedTrackUid}`)
                 .then(response => response.json())
                 .then(data => {
-                    const annotationsTimeline = document.getElementById('annotationsTimeline');
-                    annotationsTimeline.innerHTML = ''; // Clear the current annotations
                     const { notes, tags, sections } = data.result.annotations;
-
-                    // Create annotations for notes and tags
-                    notes.forEach(note => {
-                        const annotationDiv = document.createElement('div');
-                        annotationDiv.className = 'annotation note';
-                        annotationDiv.style.left = `${(note.time / trackLength) * 100}%`;
-                        annotationDiv.textContent = note.text;
-                        annotationDiv.title = note.text;
-                        annotationsTimeline.appendChild(annotationDiv);
-                    });
-
-                    tags.forEach(tag => {
-                        const annotationDiv = document.createElement('div');
-                        annotationDiv.className = 'annotation tag';
-                        annotationDiv.style.left = `${(tag.time / trackLength) * 100}%`;
-                        annotationDiv.textContent = `${tag.type}: ${tag.value}`;
-                        annotationDiv.title = `${tag.type}: ${tag.value}`;
-                        annotationsTimeline.appendChild(annotationDiv);
-                    });
 
                     // Create background colors for sections
                     sections.forEach((section, index) => {
@@ -105,13 +112,37 @@ document.getElementById('trackSelect').addEventListener('change', function() {
                         sectionDiv.className = 'section';
                         sectionDiv.style.left = `${(section.time / trackLength) * 100}%`;
                         sectionDiv.style.width = `${((sections[index + 1]?.time || trackLength) - section.time) / trackLength * 100}%`;
-                        sectionDiv.style.backgroundColor = index % 2 === 0 ? 'lightblue' : 'lightred';
-                        annotationsTimeline.insertBefore(sectionDiv, annotationsTimeline.firstChild);
+                        sectionDiv.style.backgroundColor = index % 2 === 0 ? 'lightblue' : 'red';
+                        annotationsTimeline.appendChild(sectionDiv);
                     });
+
+                    // Create annotations for notes
+notes.forEach((note, index) => {
+    const annotationDiv = document.createElement('div');
+    annotationDiv.className = 'annotation note';
+    annotationDiv.style.left = `${(note.time / trackLength) * 100}%`;
+    annotationDiv.textContent = note.text;
+    annotationDiv.title = note.text;
+    annotationDiv.style.top = `${index * 20}px`; // Adjust the height as needed
+    annotationsTimeline.appendChild(annotationDiv);
+});
+
+// Create annotations for tags
+tags.forEach((tag, index) => {
+    const annotationDiv = document.createElement('div');
+    annotationDiv.className = 'annotation tag';
+    annotationDiv.style.left = `${(tag.time / trackLength) * 100}%`;
+    annotationDiv.textContent = `${tag.type}: ${tag.value}`;
+    annotationDiv.title = `${tag.type}: ${tag.value}`;
+    annotationDiv.style.top = `${(index + notes.length) * 20}px`; // Adjust the height as needed
+    annotationsTimeline.appendChild(annotationDiv);
+});
+
                 });
         });
 });
 
+// Rest of the code...
 
 function postToTransportEndpoint(endpoint, includePlaymode = false) {
     const selectedTransportUid = document.getElementById('transportSelect').value;
@@ -130,7 +161,7 @@ function postToTransportEndpoint(endpoint, includePlaymode = false) {
     }
 
     fetch(endpoint, {
-        method: 'POST', 
+        method: 'POST',
         body: JSON.stringify(payload),
         headers: {
             'Content-Type': 'application/json'
@@ -166,4 +197,3 @@ document.getElementById('nextSectionButton').addEventListener('click', function(
 document.getElementById('prevSectionButton').addEventListener('click', function() {
     postToTransportEndpoint('http://localhost/api/session/transport/gotoprevsection', true);
 });
-
